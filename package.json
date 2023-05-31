@@ -1,5 +1,5 @@
 {
-  "name": "svelte-range-slider-pips",
+  "name": "@sawyerclick/svelte-range-slider-pips",
   "version": "2.1.0",
   "svelte": "src/index.js",
   "module": "dist/svelte-range-slider-pips.mjs",
