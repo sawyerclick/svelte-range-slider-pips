@@ -31,12 +31,18 @@
   export let id = undefined;
   export let prefix = "";
   export let suffix = "";
-  export let formatter = (v,i,p) => v;
+  export let formatter = (v, i, p) => v;
   export let handleFormatter = formatter;
 
   // stylistic props
   export let precision = 2;
   export let springValues = { stiffness: 0.15, damping: 0.4 };
+
+  /** @type {String} - The aria-label value of the slider element */
+  export let ariaLabel = undefined;
+
+  /** @type {String} - The aria-labelledby value of the slider element */
+  export let ariaLabelledby = undefined;
 
   // prepare dispatched events
   const dispatch = createEventDispatcher();
@@ -59,12 +65,13 @@
   const fixFloat = (v) => parseFloat(v.toFixed(precision));
 
   $: {
-
     // check that "values" is an array, or set it as array
     // to prevent any errors in springs, or range trimming
-    if ( !Array.isArray( values ) ) {
+    if (!Array.isArray(values)) {
       values = [(max + min) / 2];
-      console.error( "'values' prop should be an Array (https://github.com/simeydotme/svelte-range-slider-pips#slider-props)" );
+      console.error(
+        "'values' prop should be an Array (https://github.com/simeydotme/svelte-range-slider-pips#slider-props)"
+      );
     }
     // trim the range so it remains as a min/max (only 2 handles)
     // and also align the handles to the steps
@@ -73,10 +80,13 @@
     // check if the valueLength (length of values[]) has changed,
     // because if so we need to re-seed the spring function with the
     // new values array.
-    if ( valueLength !== values.length ) {
+    if (valueLength !== values.length) {
       // set the initial spring values when the slider initialises,
       // or when values array length has changed
-      springPositions = spring(values.map((v) => percentOf(v)), springValues );
+      springPositions = spring(
+        values.map((v) => percentOf(v)),
+        springValues
+      );
     } else {
       // update the value of the spring function for animated handles
       // whenever the values has updated
@@ -84,7 +94,7 @@
     }
     // set the valueLength for the next check
     valueLength = values.length;
-  };
+  }
 
   /**
    * take in a value, and then calculate that value's percentage
@@ -147,8 +157,20 @@
    * the orientation of the handles/pips based on the
    * input values of vertical and reversed
    **/
-  $: orientationStart = vertical ? reversed ? 'top' : 'bottom' : reversed ? 'right' : 'left';
-  $: orientationEnd = vertical ? reversed ? 'bottom' : 'top' : reversed ? 'left' : 'right';
+  $: orientationStart = vertical
+    ? reversed
+      ? "top"
+      : "bottom"
+    : reversed
+    ? "right"
+    : "left";
+  $: orientationEnd = vertical
+    ? reversed
+      ? "bottom"
+      : "top"
+    : reversed
+    ? "left"
+    : "right";
 
   /**
    * helper func to get the index of an element in it's DOM container
@@ -257,7 +279,9 @@
       // to the interaction value
     } else {
       closest = values.indexOf(
-        [...values].sort((a, b) => Math.abs(handleVal - a) - Math.abs(handleVal - b))[0]
+        [...values].sort(
+          (a, b) => Math.abs(handleVal - a) - Math.abs(handleVal - b)
+        )[0]
       );
     }
     return closest;
@@ -303,7 +327,7 @@
     // calculation on an out-of-range value down below
     value = alignValueToStep(value);
     // use the active handle if handle index is not provided
-    if ( typeof index === 'undefined' ) {
+    if (typeof index === "undefined") {
       index = activeHandle;
     }
     // if this is a range slider perform special checks
@@ -386,7 +410,7 @@
    * @param {event} e the event from browser
    **/
   function sliderFocusHandle(e) {
-    if ( !disabled ) {
+    if (!disabled) {
       activeHandle = index(e.target);
       focus = true;
     }
@@ -398,7 +422,7 @@
    * @param {event} e the event from browser
    **/
   function sliderKeydown(e) {
-    if ( !disabled ) {
+    if (!disabled) {
       const handle = index(e.target);
       let jump = e.ctrlKey || e.metaKey || e.shiftKey ? step * 10 : step;
       let prevent = false;
@@ -440,7 +464,7 @@
    * @param {event} e the event from browser
    **/
   function sliderInteractStart(e) {
-    if ( !disabled ) {
+    if (!disabled) {
       const el = e.target;
       const clientPos = normalisedClient(e);
       // set the closest handle as active
@@ -492,7 +516,7 @@
    * @param {event} e the event from browser
    **/
   function bodyInteract(e) {
-    if ( !disabled ) {
+    if (!disabled) {
       if (handleActivated) {
         handleInteract(normalisedClient(e));
       }
@@ -506,7 +530,7 @@
    * @param {event} e the event from browser
    **/
   function bodyMouseUp(e) {
-    if ( !disabled ) {
+    if (!disabled) {
       const el = e.target;
       // this only works if a handle is active, which can
       // only happen if there was sliderInteractStart triggered
@@ -540,7 +564,7 @@
   }
 
   function bodyKeyDown(e) {
-    if ( !disabled ) {
+    if (!disabled) {
       if (e.target === slider || slider.contains(e.target)) {
         keyboardActive = true;
       }
@@ -548,33 +572,147 @@
   }
 
   function eStart() {
-    !disabled && dispatch("start", {
-      activeHandle,
-      value: startValue,
-      values: values.map((v) => alignValueToStep(v)),
-    });
+    !disabled &&
+      dispatch("start", {
+        activeHandle,
+        value: startValue,
+        values: values.map((v) => alignValueToStep(v)),
+      });
   }
 
   function eStop() {
-    !disabled && dispatch("stop", {
-      activeHandle,
-      startValue: startValue,
-      value: values[activeHandle],
-      values: values.map((v) => alignValueToStep(v)),
-    });
+    !disabled &&
+      dispatch("stop", {
+        activeHandle,
+        startValue: startValue,
+        value: values[activeHandle],
+        values: values.map((v) => alignValueToStep(v)),
+      });
   }
 
   function eChange() {
-    !disabled && dispatch("change", {
-      activeHandle,
-      startValue: startValue,
-      previousValue:
-        typeof previousValue === "undefined" ? startValue : previousValue,
-      value: values[activeHandle],
-      values: values.map((v) => alignValueToStep(v)),
-    });
+    !disabled &&
+      dispatch("change", {
+        activeHandle,
+        startValue: startValue,
+        previousValue:
+          typeof previousValue === "undefined" ? startValue : previousValue,
+        value: values[activeHandle],
+        values: values.map((v) => alignValueToStep(v)),
+      });
   }
 </script>
+
+<div
+  {id}
+  bind:this={slider}
+  class="rangeSlider"
+  class:range
+  class:disabled
+  class:hoverable
+  class:vertical
+  class:reversed
+  class:focus
+  class:min={range === "min"}
+  class:max={range === "max"}
+  class:pips
+  class:pip-labels={all === "label" ||
+    first === "label" ||
+    last === "label" ||
+    rest === "label"}
+  on:mousedown={sliderInteractStart}
+  on:mouseup={sliderInteractEnd}
+  on:touchstart|preventDefault={sliderInteractStart}
+  on:touchend|preventDefault={sliderInteractEnd}
+>
+  {#each values as value, index}
+    <span
+      role="slider"
+      class="rangeHandle"
+      class:active={focus && activeHandle === index}
+      class:press={handlePressed && activeHandle === index}
+      data-handle={index}
+      on:blur={sliderBlurHandle}
+      on:focus={sliderFocusHandle}
+      on:keydown={sliderKeydown}
+      style="{orientationStart}: {$springPositions[
+        index
+      ]}%; z-index: {activeHandle === index ? 3 : 2};"
+      aria-label="{range === true
+        ? index === 0
+          ? 'Min nub'
+          : 'Max nub'
+        : 'Nub ' + index + 1}. {ariaLabel || ''}"
+      aria-valuemin={range === true && index === 1 ? values[0] : min}
+      aria-valuemax={range === true && index === 0 ? values[1] : max}
+      aria-valuenow={value}
+      aria-valuetext="{prefix}{handleFormatter(
+        value,
+        index,
+        percentOf(value)
+      )}{suffix}"
+      aria-orientation={vertical ? "vertical" : "horizontal"}
+      aria-disabled={disabled}
+      {disabled}
+      tabindex={disabled ? -1 : 0}
+    >
+      <span class="rangeNub" />
+      {#if float}
+        <span class="rangeFloat">
+          {#if prefix}<span class="rangeFloat-prefix">{prefix}</span
+            >{/if}{handleFormatter(
+            value,
+            index,
+            percentOf(value)
+          )}{#if suffix}<span class="rangeFloat-suffix">{suffix}</span>{/if}
+        </span>
+      {/if}
+    </span>
+  {/each}
+  {#if range}
+    <span
+      class="rangeBar"
+      style="{orientationStart}: {rangeStart($springPositions)}%; 
+             {orientationEnd}: {rangeEnd($springPositions)}%;"
+    />
+  {/if}
+  {#if pips}
+    <RangePips
+      {values}
+      {min}
+      {max}
+      {step}
+      {range}
+      {vertical}
+      {reversed}
+      {orientationStart}
+      {hoverable}
+      {disabled}
+      {all}
+      {first}
+      {last}
+      {rest}
+      {pipstep}
+      {prefix}
+      {suffix}
+      {formatter}
+      {focus}
+      {percentOf}
+      {moveHandle}
+      {fixFloat}
+    />
+  {/if}
+</div>
+
+<svelte:window
+  on:mousedown={bodyInteractStart}
+  on:touchstart={bodyInteractStart}
+  on:mousemove={bodyInteract}
+  on:touchmove={bodyInteract}
+  on:mouseup={bodyMouseUp}
+  on:touchend={bodyTouchEnd}
+  on:keydown={bodyKeyDown}
+/>
 
 <style>
   :global(.rangeSlider) {
@@ -628,6 +766,9 @@
     top: 0.25em;
     bottom: auto;
     transform: translateY(-50%) translateX(-50%);
+    outline-offset: 2px;
+    outline: 2px solid transparent;
+    border-radius: 100px;
     z-index: 2;
   }
   :global(.rangeSlider.reversed .rangeHandle) {
@@ -668,12 +809,17 @@
     opacity: 0.2;
   }
   :global(.rangeSlider.hoverable:not(.disabled) .rangeHandle.press:before),
-  :global(.rangeSlider.hoverable:not(.disabled) .rangeHandle.press:hover:before) {
+  :global(
+      .rangeSlider.hoverable:not(.disabled) .rangeHandle.press:hover:before
+    ) {
     box-shadow: 0 0 0 12px var(--handle-border);
     opacity: 0.4;
   }
-  :global(.rangeSlider.range:not(.min):not(.max) .rangeNub) {
+  :global(.rangeSlider.range .rangeNub) {
     border-radius: 10em 10em 10em 1.6em;
+  }
+  :global(.rangeSlider.range.min .rangeNub) {
+    border-radius: 10em 1.6em 10em 10em;
   }
   :global(.rangeSlider.range .rangeHandle:nth-of-type(1) .rangeNub) {
     transform: rotate(-135deg);
@@ -693,10 +839,14 @@
   :global(.rangeSlider.range.vertical .rangeHandle:nth-of-type(2) .rangeNub) {
     transform: rotate(-45deg);
   }
-  :global(.rangeSlider.range.vertical.reversed .rangeHandle:nth-of-type(1) .rangeNub) {
+  :global(
+      .rangeSlider.range.vertical.reversed .rangeHandle:nth-of-type(1) .rangeNub
+    ) {
     transform: rotate(-45deg);
   }
-  :global(.rangeSlider.range.vertical.reversed .rangeHandle:nth-of-type(2) .rangeNub) {
+  :global(
+      .rangeSlider.range.vertical.reversed .rangeHandle:nth-of-type(2) .rangeNub
+    ) {
     transform: rotate(135deg);
   }
   :global(.rangeSlider .rangeFloat) {
@@ -720,6 +870,9 @@
     opacity: 1;
     top: -0.2em;
     transform: translate(-50%, -100%);
+  }
+  :global(.rangeSlider .rangeHandle.active:focus-visible .rangeFloat) {
+    top: -0.35em;
   }
   :global(.rangeSlider .rangeBar) {
     position: absolute;
@@ -776,94 +929,16 @@
     background-color: #d7dada;
     background-color: var(--slider);
   }
+  :global(.rangeSlider .rangeHandle:focus) {
+    outline: none;
+  }
+  :global(.rangeSlider .rangeHandle:focus-visible) {
+    outline: 2px solid #334;
+  }
+  @supports not selector(:focus-visible) {
+    :global(.rangeSlider .rangeHandle:focus) {
+      outline: 1px solid #334;
+      outline-offset: 1px;
+    }
+  }
 </style>
-
-<div
-  {id}
-  bind:this={slider}
-  class="rangeSlider"
-  class:range
-  class:disabled
-  class:hoverable
-  class:vertical
-  class:reversed
-  class:focus
-  class:min={range === 'min'}
-  class:max={range === 'max'}
-  class:pips
-  class:pip-labels={all === 'label' || first === 'label' || last === 'label' || rest === 'label'}
-  on:mousedown={sliderInteractStart}
-  on:mouseup={sliderInteractEnd}
-  on:touchstart|preventDefault={sliderInteractStart}
-  on:touchend|preventDefault={sliderInteractEnd}
->
-  {#each values as value, index}
-    <span
-      role="slider"
-      class="rangeHandle"
-      class:active={focus && activeHandle === index}
-      class:press={handlePressed && activeHandle === index}
-      data-handle={index}
-      on:blur={sliderBlurHandle}
-      on:focus={sliderFocusHandle}
-      on:keydown={sliderKeydown}
-      style="{orientationStart}: {$springPositions[index]}%; z-index: {activeHandle === index ? 3 : 2};"
-      aria-valuemin={range === true && index === 1 ? values[0] : min}
-      aria-valuemax={range === true && index === 0 ? values[1] : max}
-      aria-valuenow={value}
-      aria-valuetext="{prefix}{handleFormatter(value,index,percentOf(value))}{suffix}"
-      aria-orientation={vertical ? 'vertical' : 'horizontal'}
-      aria-disabled={disabled}
-      {disabled}
-      tabindex="{ disabled ? -1 : 0 }"
-    >
-      <span class="rangeNub" />
-      {#if float}
-        <span class="rangeFloat">
-          {#if prefix}<span class="rangeFloat-prefix">{prefix}</span>{/if}{handleFormatter(value,index,percentOf(value))}{#if suffix}<span class="rangeFloat-suffix">{suffix}</span>{/if}
-        </span>
-      {/if}
-    </span>
-  {/each}
-  {#if range}
-    <span
-      class="rangeBar"
-      style="{orientationStart}: {rangeStart($springPositions)}%; 
-             {orientationEnd}: {rangeEnd($springPositions)}%;" />
-  {/if}
-  {#if pips}
-    <RangePips
-      {values}
-      {min}
-      {max}
-      {step}
-      {range}
-      {vertical}
-      {reversed}
-      {orientationStart}
-      {hoverable}
-      {disabled}
-      {all}
-      {first}
-      {last}
-      {rest}
-      {pipstep}
-      {prefix}
-      {suffix}
-      {formatter}
-      {focus}
-      {percentOf}
-      {moveHandle}
-      {fixFloat}
-    />
-  {/if}
-</div>
-
-<svelte:window
-  on:mousedown={bodyInteractStart}
-  on:touchstart={bodyInteractStart}
-  on:mousemove={bodyInteract}
-  on:touchmove={bodyInteract}
-  on:mouseup={bodyMouseUp}
-  on:touchend={bodyTouchEnd}
-  on:keydown={bodyKeyDown} />
