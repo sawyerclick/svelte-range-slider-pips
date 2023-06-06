@@ -1,5 +1,5 @@
 /**
- * @sawyerclick/svelte-range-slider-pips ~ 2.1.0
+ * @sawyerclick/svelte-range-slider-pips ~ 2.2.0
  * Multi-Thumb, Accessible, Beautiful Range Slider with Pips
  * © MPL-2.0 ~ Simon Goellner <simey.me@gmail.com> ~ 6/6/2023
  */
