@@ -41,9 +41,6 @@
   /** @type {String} - The aria-label value of the slider element */
   export let ariaLabel = undefined;
 
-  /** @type {String} - The aria-labelledby value of the slider element */
-  export let ariaLabelledby = undefined;
-
   // prepare dispatched events
   const dispatch = createEventDispatcher();
 
